@@ -1,0 +1,9 @@
+
+
+WITH RECURSIVE FACT AS(
+Select 1 as num ,1 as counter
+union all
+SELECT num*(counter+1) as num,counter+1 as counter from fact
+where counter<10
+)
+SELECT num as factorial, counter as num FROM FACT where counter=5

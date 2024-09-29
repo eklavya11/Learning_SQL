@@ -1,0 +1,48 @@
+--RECURSIVE QUERY
+--SYNTAX
+
+WITH [RECURSIVE] CTE_NAME AS
+  (
+   SELECT query (Non Recursive query or the Base query)
+    UNION [ALL]
+   SELECT query (Recursive query using CTE_name [with a termination condition])
+  )
+SELECT * FROM CTE_name
+---------------------------------------
+---------------------------------------
+
+--1 Display number from 1 to 10 without using any built in function.
+
+WITH RECURSIVE CTE_PRINT_TO_10 AS(
+SELECT 1 AS NUM
+UNION ALL
+SELECT NUM+1 AS NUM FROM CTE_PRINT_TO_10
+WHERE NUM<10
+)
+SELECT * FROM CTE_PRINT_TO_10
+
+
+--2 Hierarchy of employees under a given manager
+
+WITH RECURSIVE EMP_HIERARCHY AS (
+SELECT id, name , manager_id, designation , 1 as lvl
+from employee_details where name='Noah Harris'
+UNION
+SELECT D.id, D.name , D.manager_id, D.designation , E.lvl+1
+from EMP_HIERARCHY E INNER JOIN employee_details D ON E.ID = D.MANAGER_ID
+)
+SELECT * FROM EMP_HIERARCHY
+
+--3 Hierarchy of managers for a given employee
+
+
+WITH RECURSIVE MANAGER_HIERARCHY AS (
+SELECT id,name,manager_id,designation 
+from employee_details where name = 'Noah Harris'
+UNION 
+SELECT E.id,E.name,E.manager_id,E.designation
+from MANAGER_HIERARCHY H INNER JOIN employee_details E on H.manager_id = E.id
+)
+SELECT * FROM MANAGER_HIERARCHY
+
+

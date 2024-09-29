@@ -1,0 +1,83 @@
+	--query to fetch most expensive and least expensive product
+	SELECT *,
+	FIRST_VALUE(PRODUCT_NAME) 
+	OVER(PARTITION BY PRODUCT_CATEGORY ORDER BY PRICE DESC) AS MOST_EXP_PROD,
+	LAST_VALUE(PRODUCT_NAME)
+	OVER(
+	PARTITION BY PRODUCT_CATEGORY 
+	ORDER BY PRICE DESC
+	RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) -- FRAME CLAUSE IN SQL(DEFINES THE RANGE TO CONSIDER FOR CALCULATION)
+	AS LEAST_EXP_PROD
+	FROM PRODUCT
+
+
+	--RANGE-- Range will not give different product name if price has duplicates, will give same product name
+	--ROWS -- Rows will give different product name if price has duplicates
+
+	--ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW -- DEFAULT FRAME IN SQL
+	--WE can use ROWS ins place of RANGE-- 
+	--Handling of Duplicate Values:
+
+	--ROWS: Each row is treated individually. Duplicates are handled based on their row positions.
+	--RANGE: All rows with the same value (or within the defined range) are included. It aggregates rows based on the value of the column used for ordering.
+	--Performance:
+
+	--ROWS: Often more straightforward and faster because it works purely on row positions.
+	--RANGE: May be less efficient with large datasets or many duplicates due to the need to handle ranges of values.
+
+
+
+	--Alternate way to write window function
+	SELECT *,
+	FIRST_VALUE(PRODUCT_NAME) 
+	OVER W AS MOST_EXP_PROD,
+	LAST_VALUE(PRODUCT_NAME)
+	OVER W 
+	AS LEAST_EXP_PROD
+	FROM PRODUCT
+	WINDOW W AS (PARTITION BY PRODUCT_CATEGORY ORDER BY PRICE DESC 
+				 ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) --reusable code as W
+
+
+
+	--Nth Value
+	--2nd most expesive product
+	SELECT *, NTH_VALUE(Product_name,2) OVER W AS Second_Most_Exp
+	FROM PRODUCT 
+	--WHERE Product_category = 'Phone'
+	WINDOW W AS (PARTITION BY PRODUCT_CATEGORY ORDER BY PRICE DESC
+	ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+
+
+	--NTILE Segregate all expensive, mid range and cheap phones
+		SELECT BRAND,PRODUCT_NAME,
+		CASE 
+		WHEN BUCKETS=1 THEN 'EXPENSIVE RANGE CATEGORY'
+		WHEN BUCKETS=2 THEN 'MID RANGE CATEGORY'
+		WHEN BUCKETS=3 THEN 'CHEAP RANGE CATEGORY'
+		END AS CATEGORY FROM(
+		SELECT *,NTILE(3) OVER(ORDER BY PRICE DESC) AS BUCKETS
+		FROM PRODUCT WHERE PRODUCT_CATEGORY = 'Phone') X
+
+
+--CUME_DIST(cumulative distribution)
+--VALUE-->1>=CUME_DIST>0
+--Formula -- current row number (or row number with value same as current row)/Total Number of Rows
+
+SELECT product_name,cume_dist_ FROM (
+SELECT *,
+ROUND(CUME_DIST() OVER(ORDER BY PRICE DESC)::NUMERIC * 100,2) AS CUME_DIST_
+FROM PRODUCT) X
+WHERE cume_dist_ <=30;
+
+
+--Percent_rank(relative rank of current row/percentage ranking)
+--VALUE-->1>=Percent_rank>0
+--formula (current row no - 1/total number of row -1)
+ SELECT PRODUCT_NAME,PERC_RANK FROM(
+ SELECT *,ROUND(PERCENT_RANK() OVER(ORDER BY PRICE)::NUMERIC*100,2) AS Perc_rank from PRODUCT)X
+ WHERE PRODUCT_NAME = 'Galaxy Z Fold 3' -- TELLS how much expensive galaxy Z Fold 3 is than other products in percent
+
+
+ 
+
